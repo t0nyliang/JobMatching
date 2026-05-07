@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Matcher</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f0f0f;
+      color: #f0f0f0;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #888;
+      margin-bottom: 5px;
+    }
+
+    select,
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      background: #1a1a1a;
+      color: #f0f0f0;
+    }
+
+    select:focus,
+    textarea:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #555;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background 0.1s;
+    }
+
+    .btn-primary {
+      background: #f0f0f0;
+      color: #0f0f0f;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #d0d0d0;
+    }
+
+    .btn-primary:disabled {
+      background: #3a3a3a;
+      color: #666;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: #2a2a2a;
+      color: #f0f0f0;
+    }
+
+    .btn-secondary:hover {
+      background: #333;
+    }
+
+    .btn-sm {
+      padding: 5px 12px;
+      font-size: 0.8rem;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 24px;
+    }
+
+    .divider {
+      text-align: center;
+      color: #444;
+      font-size: 0.8rem;
+      margin: 14px 0;
+    }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .session-id {
+      font-size: 0.72rem;
+      color: #555;
+      font-family: monospace;
+    }
+
+    /* Candidate profile card */
+    .candidate-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .candidate-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #555;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .candidate-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .candidate-subtitle {
+      font-size: 0.875rem;
+      color: #888;
+      margin-bottom: 2px;
+    }
+
+    .candidate-headline {
+      font-size: 0.85rem;
+      color: #888;
+      font-style: italic;
+      margin-top: 2px;
+      margin-bottom: 8px;
+    }
+
+    .skill-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+
+    .skill-pill {
+      background: #2a2a2a;
+      color: #d0d0d0;
+      padding: 1px 8px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+    }
+
+    .candidate-meta-row {
+      font-size: 0.82rem;
+      color: #888;
+    }
+
+    /* Preference panel */
+    .prefs-panel {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+
+    .prefs-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .tag-boost {
+      background: #1a3a1a;
+      color: #4ade80;
+    }
+
+    .tag-penalize {
+      background: #3a1a1a;
+      color: #f87171;
+    }
+
+    .tag-require {
+      background: #1a1a3a;
+      color: #a78bfa;
+    }
+
+    .explanation {
+      font-size: 0.78rem;
+      color: #666;
+      font-style: italic;
+      margin-top: 8px;
+    }
+
+    /* Job cards */
+    .jobs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .job-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .job-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .job-title {
+      font-weight: 700;
+      font-size: 0.975rem;
+      margin-bottom: 2px;
+    }
+
+    .job-company {
+      font-size: 0.875rem;
+      color: #888;
+    }
+
+    .job-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      align-items: center;
+      margin-top: 8px;
+      font-size: 0.825rem;
+      color: #888;
+    }
+
+    .yc-badge {
+      background: #2a2000;
+      color: #fbbf24;
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .job-description {
+      font-size: 0.82rem;
+      color: #888;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+
+    .job-sponsorship {
+      font-size: 0.78rem;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .job-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 8px;
+      gap: 8px;
+    }
+
+    .matched-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .matched-label {
+      font-size: 0.72rem;
+      color: #666;
+      margin-right: 2px;
+    }
+
+    .tag-matched {
+      background: #1a3a1a;
+      color: #4ade80;
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .score {
+      font-family: monospace;
+      font-size: 0.72rem;
+      color: #666;
+      flex-shrink: 0;
+    }
+
+    .view-link {
+      font-size: 0.825rem;
+      color: #60a5fa;
+      text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .view-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Collapsible */
+    .collapsible {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .collapsible-toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #f0f0f0;
+      user-select: none;
+    }
+
+    .collapsible-toggle:hover {
+      background: #222;
+    }
+
+    .chevron {
+      font-size: 0.7rem;
+      color: #555;
+    }
+
+    .collapsible-body {
+      padding: 4px 16px 16px;
+    }
+
+    /* Feedback */
+    .feedback-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+
+    .feedback-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .feedback-input {
+      flex: 1;
+    }
+
+    /* History */
+    .history-item {
+      padding: 7px 0;
+      font-size: 0.85rem;
+      color: #888;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .error-box {
+      background: #3a1a1a;
+      color: #f87171;
+      padding: 10px 14px;
+      border-radius: 6px;
+      margin-bottom: 14px;
+      font-size: 0.875rem;
+    }
+
+    .saved-note {
+      margin-left: 10px;
+      font-size: 0.8rem;
+      color: #4ade80;
+      font-weight: 500;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function App() {
+      const [view, setView] = useState('setup');
+
+      // Setup state
+      const [candidates, setCandidates] = useState([]);
+      const [selectedIdx, setSelectedIdx] = useState('');
+      const [customJson, setCustomJson] = useState('');
+
+      // Session state
+      const [sessionId, setSessionId] = useState(null);
+      const [currentCandidate, setCurrentCandidate] = useState(null);
+      const [rounds, setRounds] = useState([]);
+      const [preferences, setPreferences] = useState({ boost: [], penalize: [], require: [] });
+      const [lastDelta, setLastDelta] = useState(null);
+      const [feedbackInput, setFeedbackInput] = useState('');
+      const [editedProfile, setEditedProfile] = useState('');
+      const [profileSaved, setProfileSaved] = useState(false);
+      const [showEdit, setShowEdit] = useState(false);
+      const [showHistory, setShowHistory] = useState(false);
+
+      // UI state
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState(null);
+
+      useEffect(() => {
+        fetch('/api/candidates')
+          .then(r => r.json())
+          .then(data => {
+            setCandidates(data);
+            if (data.length > 0) setSelectedIdx('0');
+          })
+          .catch(() => setError('Failed to load sample candidates'));
+      }, []);
+
+      const currentRound = rounds[rounds.length - 1];
+      const roundNum = currentRound ? currentRound.round : 0;
+      const hasPrefs = preferences.boost.length > 0 || preferences.penalize.length > 0 || (preferences.require || []).length > 0;
+
+      async function handleStart() {
+        setError(null);
+        let candidate;
+        if (customJson.trim()) {
+          try { candidate = JSON.parse(customJson); }
+          catch { setError('Invalid JSON in the custom candidate field'); return; }
+        } else if (selectedIdx !== '') {
+          candidate = candidates[parseInt(selectedIdx, 10)];
+        } else {
+          setError('Select a candidate or paste custom JSON');
+          return;
+        }
+
+        setLoading(true);
+        try {
+          const res = await fetch('/api/session/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ candidate }),
+          });
+          if (!res.ok) throw new Error(`Server error ${res.status}`);
+          const data = await res.json();
+          setSessionId(data.session_id);
+          setCurrentCandidate(candidate);
+          setRounds([{ round: data.round, jobs: data.recommendations, feedback: null, delta: null }]);
+          setPreferences({ boost: [], penalize: [], require: [] });
+          setLastDelta(null);
+          setEditedProfile(JSON.stringify(candidate, null, 2));
+          setProfileSaved(false);
+          setView('results');
+        } catch (e) {
+          setError('Failed to start session: ' + e.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      async function handleFeedback() {
+        if (!feedbackInput.trim() || loading) return;
+        setLoading(true);
+        setError(null);
+
+        const body = { session_id: sessionId, feedback: feedbackInput };
+        if (editedProfile.trim()) {
+          try {
+            const parsed = JSON.parse(editedProfile);
+            body.candidate = parsed;
+            setCurrentCandidate(parsed);
+          } catch { /* ignore invalid JSON */ }
+        }
+
+        try {
+          const res = await fetch('/api/session/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          if (!res.ok) throw new Error(`Server error ${res.status}`);
+          const data = await res.json();
+
+          setRounds(prev => {
+            const copy = [...prev];
+            copy[copy.length - 1] = { ...copy[copy.length - 1], feedback: feedbackInput, delta: data.preference_delta };
+            return [...copy, { round: data.round, jobs: data.recommendations, feedback: null, delta: null }];
+          });
+          setPreferences({
+            boost: data.preference_delta.boost || [],
+            penalize: data.preference_delta.penalize || [],
+            require: data.preference_delta.require || [],
+          });
+          setLastDelta(data.preference_delta);
+          setFeedbackInput('');
+          setProfileSaved(false);
+        } catch (e) {
+          setError('Failed to submit feedback: ' + e.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      // ── Setup view ────────────────────────────────────────────────────────
+      if (view === 'setup') {
+        return (
+          <div className="container">
+            <h1 style={{ marginBottom: 24 }}>Job Matcher</h1>
+            {error && <div className="error-box">{error}</div>}
+            <div className="card">
+              <div className="field">
+                <label>Sample candidate</label>
+                <select value={selectedIdx} onChange={e => setSelectedIdx(e.target.value)}>
+                  {candidates.map((c, i) => (
+                    <option key={i} value={String(i)}>
+                      {c.name}{c.headline ? ` — ${c.headline}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="divider">— or paste custom candidate JSON below —</div>
+              <div className="field">
+                <label>
+                  Custom candidate JSON{' '}
+                  <span style={{ fontWeight: 400, color: '#555' }}>(overrides dropdown)</span>
+                </label>
+                <textarea
+                  rows={6}
+                  placeholder='{ "name": "...", "headline": "...", "skills": [...], ... }'
+                  value={customJson}
+                  onChange={e => setCustomJson(e.target.value)}
+                  style={{ fontFamily: 'monospace', fontSize: '0.82rem' }}
+                />
+              </div>
+              <button className="btn btn-primary" onClick={handleStart} disabled={loading}>
+                {loading ? 'Loading…' : 'Find Matches'}
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      // ── Results view ──────────────────────────────────────────────────────
+      return (
+        <div className="container">
+          <div className="results-header">
+            <h1>Round {roundNum}</h1>
+            <span className="session-id">session: {sessionId}</span>
+            <button
+              className="btn btn-secondary btn-sm"
+              style={{ marginLeft: 'auto' }}
+              onClick={() => { setView('setup'); setError(null); }}
+            >
+              ← New Search
+            </button>
+          </div>
+
+          {error && <div className="error-box">{error}</div>}
+
+          {currentCandidate && <CandidateCard candidate={currentCandidate} />}
+
+          {hasPrefs && (
+            <div className="prefs-panel">
+              <div className="prefs-tags">
+                {preferences.boost.map(t => <span key={t} className="tag tag-boost">↑ {t}</span>)}
+                {preferences.penalize.map(t => <span key={t} className="tag tag-penalize">↓ {t}</span>)}
+                {(preferences.require || []).map((g, i) => (
+                  <span key={i} className="tag tag-require">★ {Array.isArray(g) ? g[0] : g}</span>
+                ))}
+              </div>
+              {lastDelta && lastDelta.explanation && (
+                <div className="explanation">{lastDelta.explanation}</div>
+              )}
+            </div>
+          )}
+
+          <div className="jobs-list">
+            {currentRound && currentRound.jobs.map((job, i) => (
+              <JobCard key={i} job={job} boostTerms={preferences.boost} />
+            ))}
+          </div>
+
+          {/* Edit Profile */}
+          <div className="collapsible">
+            <div className="collapsible-toggle" onClick={() => setShowEdit(v => !v)}>
+              <span>Edit Profile</span>
+              <span className="chevron">{showEdit ? '▲' : '▼'}</span>
+            </div>
+            {showEdit && (
+              <div className="collapsible-body">
+                <textarea
+                  rows={10}
+                  value={editedProfile}
+                  onChange={e => { setEditedProfile(e.target.value); setProfileSaved(false); }}
+                  style={{ fontFamily: 'monospace', fontSize: '0.8rem', marginBottom: 8 }}
+                />
+                <button className="btn btn-secondary btn-sm" onClick={() => setProfileSaved(true)}>
+                  Update Profile
+                </button>
+                {profileSaved && (
+                  <span className="saved-note">✓ Saved — applies on next refinement</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Feedback */}
+          <div className="feedback-card">
+            <label>Refine your matches</label>
+            <div className="feedback-row">
+              <input
+                className="feedback-input"
+                type="text"
+                placeholder='"more backend", "earlier stage", "remote only", "no internships"…'
+                value={feedbackInput}
+                onChange={e => setFeedbackInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleFeedback()}
+                disabled={loading}
+              />
+              <button
+                className="btn btn-primary"
+                onClick={handleFeedback}
+                disabled={loading || !feedbackInput.trim()}
+              >
+                {loading ? '…' : 'Refine →'}
+              </button>
+            </div>
+          </div>
+
+          {/* Round History */}
+          {rounds.length > 1 && (
+            <div className="collapsible">
+              <div className="collapsible-toggle" onClick={() => setShowHistory(v => !v)}>
+                <span>Round History ({rounds.length} rounds)</span>
+                <span className="chevron">{showHistory ? '▲' : '▼'}</span>
+              </div>
+              {showHistory && (
+                <div className="collapsible-body">
+                  {rounds.map((r, i) => (
+                    <div key={i} className="history-item">
+                      <strong style={{ color: '#f0f0f0' }}>Round {r.round}</strong>
+                      {r.feedback && <span> · "{r.feedback}"</span>}
+                      <span style={{ color: '#555' }}>
+                        {' '}→ {r.jobs.map(j => j.company || j.title).join(', ')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function CandidateCard({ candidate }) {
+      const currentEmp = (candidate.current_employers || [])[0];
+      const subtitle = currentEmp
+        ? `${currentEmp.employee_title} at ${currentEmp.employer_name}`
+        : candidate.title || '';
+      const topSkills = (candidate.skills || []).slice(0, 5);
+      const pastEmps = (candidate.past_employers || []).slice(0, 2);
+      const edu = (candidate.education_background || [])[0];
+
+      return (
+        <div className="candidate-card">
+          <div className="candidate-label">Candidate Profile</div>
+          {candidate.name && <div className="candidate-name">{candidate.name}</div>}
+          {subtitle && <div className="candidate-subtitle">{subtitle}</div>}
+          {candidate.location && <div className="candidate-subtitle">{candidate.location}</div>}
+          {candidate.headline && <div className="candidate-headline">{candidate.headline}</div>}
+          {topSkills.length > 0 && (
+            <div className="skill-pills">
+              {topSkills.map(s => <span key={s} className="skill-pill">{s}</span>)}
+            </div>
+          )}
+          {edu && (
+            <div className="candidate-meta-row">
+              {[edu.degree_name, edu.field_of_study, edu.institute_name].filter(Boolean).join(' · ')}
+            </div>
+          )}
+          {pastEmps.map((e, i) => (
+            <div key={i} className="candidate-meta-row">
+              {e.employee_title} at {e.employer_name}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    function JobCard({ job, boostTerms }) {
+      // Check which boost terms appear in this job's text to show why it was surfaced
+      const jobText = [job.title, job.company, job.description, job.location].join(' ').toLowerCase();
+      const matched = (boostTerms || []).filter(t => jobText.includes(t.toLowerCase()));
+
+      const desc = job.description
+        ? job.description.slice(0, 200).trimEnd() + (job.description.length > 200 ? '…' : '')
+        : null;
+
+      return (
+        <div className="job-card">
+          <div className="job-top">
+            <div>
+              <div className="job-title">{job.title}</div>
+              <div className="job-company">{job.company}</div>
+            </div>
+            {job.url && (
+              <a href={job.url} target="_blank" rel="noopener noreferrer" className="view-link">
+                View →
+              </a>
+            )}
+          </div>
+          <div className="job-meta">
+            {job.yc_batch && <span className="yc-badge">YC {job.yc_batch}</span>}
+            {job.location && <span>{job.location}</span>}
+            {job.salary && <span>· {job.salary}</span>}
+            {job.job_type && <span>· {job.job_type}</span>}
+            {job.experience && <span>· {job.experience}</span>}
+            {job.equity && <span>· {job.equity}</span>}
+          </div>
+          {job.sponsorship && <div className="job-sponsorship">{job.sponsorship}</div>}
+          {desc && <div className="job-description">{desc}</div>}
+          <div className="job-footer">
+            {matched.length > 0 ? (
+              <div className="matched-section">
+                <span className="matched-label">Matched:</span>
+                {matched.map(t => <span key={t} className="tag-matched">{t}</span>)}
+              </div>
+            ) : <div />}
+            <span className="score">score: {job.score}</span>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+
+</html>
